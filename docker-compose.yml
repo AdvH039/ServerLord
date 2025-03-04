@@ -9,14 +9,46 @@ services:
       LOG_LEVEL: ${LOG_LEVEL}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      DB_USER: postgres
+      DB_HOST: postgres-db
+      DB_NAME: server-lord-db
+      DB_PASSWORD: 1234
+      DB_PORT: 5432
     env_file:
       - ./.env
     ports:
-      - 8000:8000
+      - "8000:8000"
     networks:
       - nodejs-metrics-demo-network
     volumes:
       - .:/node/app
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      collector:
+        condition: service_started
+
+  postgres-db:
+    image: postgres:latest
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: server-lord-db
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - nodejs-metrics-demo-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
 
   collector:
     container_name: nodejs-metrics-demo-collector
@@ -28,3 +60,6 @@ services:
 
 networks:
   nodejs-metrics-demo-network:
+
+volumes:
+  pgdata:

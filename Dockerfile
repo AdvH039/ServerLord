@@ -36,6 +36,9 @@ COPY package*.json ./
 # Install production dependencies and clean the cache
 RUN npm ci --omit=dev  && npm cache clean --force
 
+RUN npm install
+
+
 # Copy the entire source code into the container
 COPY . .
 
